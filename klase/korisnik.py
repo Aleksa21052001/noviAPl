@@ -1,3 +1,5 @@
+from datetime import datetime
+
 
 class Korisnik():
 
@@ -11,7 +13,7 @@ class Korisnik():
 
     @property
     def prezime(self):
-        return self.__preime
+        return self.__prezime
 
     @prezime.setter
     def prezime(self, novo_preime):

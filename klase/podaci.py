@@ -2,7 +2,6 @@ from klase.ostakeklase import *
 import pickle
 
 
-
 class Podaci:
 
     @property

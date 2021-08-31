@@ -9,7 +9,9 @@ class Pacijent(Korisnik):
     @lbo.setter
     def lbo(self, novi_lbo):
         self.__ime = novi_lbo
-
+    @property
+    def recepti(self):
+        return self.__recepti
 
     def __init__(self, jmbg, ime, prezime, datum_rodjenja, lbo, recepti):
         super().__init__(jmbg, ime, prezime, datum_rodjenja)

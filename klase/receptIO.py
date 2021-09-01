@@ -1,5 +1,5 @@
 import json
-datoteka = './datoteke/recepti.json'
+datoteka = '../datoteke/recepti.json'
 
 def sacuvaj_recepti(recepti):
     with open(datoteka, "w") as f:

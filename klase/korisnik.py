@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-class Korisnik():
+class Korisnik:
 
     @property
     def ime(self):

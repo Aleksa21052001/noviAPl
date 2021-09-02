@@ -18,6 +18,8 @@ class Pacijent(Korisnik):
         self.__lbo = lbo
         self.__recepti = recepti #lista recepata
 
+    def dodaj_recept(self,recept):
+        self.__recepti.append(recept)
 
     def __str__(self):
         format_linije = "{:>14}: {}"
@@ -38,6 +40,10 @@ class Lekar(Korisnik):
     @specijalizacija.setter
     def specijalizacija(self, noca_spec):
         self.__specijalizacija = noca_spec
+
+    @property
+    def recepti(self):
+        return self.__recepti
 
 
     def __init__(self, jmbg, ime, prezime, datum_rodjenja, specijalizacija, recepti):

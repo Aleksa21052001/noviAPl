@@ -7,10 +7,17 @@ from klase.pacijentIO import ucitaj_pacijente, sacuvaj_pacijente
 from  klase.lekarIO import ucitaj_lekare, sacuvaj_lekare
 from  klase.lekIIO import ucitaj_lekovi, sacuvaj_lekovi
 from  klase.receptIO import ucitaj_recepte, sacuvaj_recepte
+import datetime
 
+# datum = datetime.datetime(2021,9,5)
+# print(datum)
+# danas = datetime.datetime.now()
+# if datum < danas:
+#     print("da")
 
-
-
+SELEKTOVAN_INDEKS = -1
+SELEKTOVAN_PACIJENT = -1
+SELEKTOVANI_INDEKS_LEKAR = -1
 
 class AppGui(Tk): #glavni prozor
 
@@ -61,6 +68,129 @@ class AppGui(Tk): #glavni prozor
 
 
 class DodavanjeProzorpacijenti(Toplevel):
+
+    # -------------> PRIKAZ RECEPATA<-------------
+
+
+
+    def prikazi_recept(self):
+        if not self.__pacijenti_listbox.curselection():
+            messagebox.showerror("greska", "Morate da selektujete pacijenta")
+            return None
+
+        recepti = ucitaj_recepte()
+        filtrirani_recepti = []
+
+        indeks = self.promena_selekcije_u_listboxu()
+        pacijent = self.__pacijenti[indeks]
+
+        for recept in recepti:
+            if pacijent.lbo == recept.pacijent.lbo:
+                filtrirani_recepti.append(recept)
+
+        prikaz_recepata_pacijent = Toplevel(self.master)
+        prikaz_recepata_pacijent.title("recepti")
+        prikaz_recepata_pacijent.geometry("650x350")
+
+        self.__filtrirani_reepti = filtrirani_recepti
+
+        # ------------>FRAME<------------
+
+        levi_frame = Frame(prikaz_recepata_pacijent, borderwidth=2, relief="ridge", padx=10, pady=10)
+        levi_frame.pack(side=LEFT, fill=BOTH, expand=1)
+
+        desni_frame = Frame(prikaz_recepata_pacijent, borderwidth=2, relief="ridge", padx=10, pady=10)
+        desni_frame.pack(side=RIGHT, fill=BOTH, expand=1)
+
+        # ------------>listbox<------------
+
+        self.__recepti_listbox = Listbox(levi_frame, width=43, activestyle="none")
+        self.__recepti_listbox.grid(row=2, column=0, pady=5, padx=5)
+        self.__recepti_listbox.bind("<<ListboxSelect>>", self.promena_selekcije_listbox_recept)
+
+        # ------------>LABELI<------------
+
+        Label(levi_frame, text="LISTA RECEPATA").grid(row=1, column=0, sticky=W)
+
+        red = 0
+        Label(desni_frame, text="Pacijent:").grid(row=red,
+                                                  sticky=E)  # sticky argument određuje horinzotalno poravnanje kolone (E, W), odnosno vertikalno poravnanje reda (N, S)
+        red += 1
+        Label(desni_frame, text="Datum i vreme:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="Izvestaj:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="lekar:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="Lek:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="Kolicina:").grid(row=red, sticky=E)
+
+        self.__pacijent_labela = Label(desni_frame)
+        self.__datum2_labela = Label(desni_frame)
+        self.__izvestaj_labela = Label(desni_frame)
+        self.__lekar_labela = Label(desni_frame)
+        self.__lek_labela = Label(desni_frame)
+        self.__kolicina_labela = Label(desni_frame)
+
+        red = 0
+        kolona = 1
+        self.__pacijent_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__datum2_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__izvestaj_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__lekar_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__lek_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__kolicina_labela.grid(row=red, column=kolona, sticky=W)
+
+        red += 1
+        Label(desni_frame, text="", width=50).grid(row=red, column=1)
+
+        # ------------>Button<------------
+
+        self.__prikazi_recept_button = Button(levi_frame, text="Prikazi", state=DISABLED, width=10,command=self.on_prikazi_recept)
+        self.__prikazi_recept_button.grid(row=3, column=0, padx=5, pady=5)
+        self.__nazad_button = Button(desni_frame, text='Nazad', command=prikaz_recepata_pacijent.destroy, width=10)
+        self.__nazad_button.grid(row=red, column=0, padx=5, pady=5)
+
+        self.recepti_pacijent_listbox(filtrirani_recepti)
+
+    def recepti_pacijent_listbox(self, filtrirani_recepti):
+        self.__recepti_listbox.delete(0, END)
+
+        for recept in filtrirani_recepti:
+            self.__recepti_listbox.insert(END, recept.pacijent.ime + " " + recept.pacijent.prezime + " "
+                                                                                                     "|" + " " + recept.lekar.ime + " " + recept.lekar.prezime)
+
+    def ispisi_labele_recept(self, recept):
+        self.__pacijent_labela['text'] = recept.pacijent.ime + " " + recept.pacijent.prezime
+        self.__datum2_labela['text'] = recept.datum
+        self.__izvestaj_labela['text'] = recept.izvestaj
+        self.__lekar_labela['text'] = recept.lekar.ime + " " + recept.lekar.prezime
+        self.__lek_labela['text'] = recept.lek.naziv
+        self.__kolicina_labela['text'] = recept.kolicina
+
+    def promena_selekcije_listbox_recept(self, evemt=None):
+        if not self.__recepti_listbox.curselection():
+            return
+
+        indeks = self.__recepti_listbox.curselection()[0]
+        self.__prikazi_recept_button['state'] = NORMAL
+        return indeks
+
+    def on_prikazi_recept(self):
+        indeks = self.promena_selekcije_listbox_recept()
+        filtrirani_recepti = self.__filtrirani_reepti
+        recept_za_prikaz = filtrirani_recepti[indeks]
+        self.ispisi_labele_recept(recept_za_prikaz)
+
+    # ------------->RECEPTI<-------------
+
+
 
     def zakljucaj_dugmice(self):
         self.__izmeni_button["state"] = DISABLED
@@ -131,124 +261,6 @@ class DodavanjeProzorpacijenti(Toplevel):
         print(indeks)
         return indeks
 
-    #<--------RECEPTI---------->
-
-    def prikazi_recept(self):
-        if not self.__pacijenti_listbox.curselection():
-            messagebox.showerror("greska","Morate da selektujete pacijenta")
-            return None
-
-        recepti = ucitaj_recepte()
-        filtrirani_recepti = []
-        indeks = self.promena_selekcije_u_listboxu()
-        pacijent = self.__pacijenti[indeks]
-        for recept in recepti:
-            if pacijent.ime == recept.pacijent.ime and pacijent.prezime == recept.pacijent.prezime:
-                filtrirani_recepti.append(recept)
-
-
-        prikaz_recepata_pacijent = Toplevel(self.master)
-        prikaz_recepata_pacijent.title("recepti")
-        prikaz_recepata_pacijent.geometry("650x350")
-
-        self.__filtrirani_reepti = filtrirani_recepti
-
-        # ------------>FRAME<------------
-
-        levi_frame = Frame(prikaz_recepata_pacijent, borderwidth=2, relief="ridge", padx=10, pady=10)
-        levi_frame.pack(side=LEFT, fill=BOTH, expand=1)
-
-        desni_frame = Frame(prikaz_recepata_pacijent, borderwidth=2, relief="ridge", padx=10, pady=10)
-        desni_frame.pack(side=RIGHT, fill=BOTH, expand=1)
-
-        # ------------>listbox<------------
-
-        self.__recepti_listbox = Listbox(levi_frame, width=43, activestyle="none")
-        self.__recepti_listbox.grid(row=2, column=0, pady=5, padx=5)
-        self.__recepti_listbox.bind("<<ListboxSelect>>", self.promena_selekcije_listbox_recept)
-
-        # ------------>LABELI<------------
-
-        Label(levi_frame, text="LISTA RECEPATA").grid(row=1, column=0, sticky=W)
-
-        red = 0
-        Label(desni_frame, text="Pacijent:").grid(row=red,
-                                                  sticky=E)  # sticky argument određuje horinzotalno poravnanje kolone (E, W), odnosno vertikalno poravnanje reda (N, S)
-        red += 1
-        Label(desni_frame, text="Datum i vreme:").grid(row=red, sticky=E)
-        red += 1
-        Label(desni_frame, text="Izvestaj:").grid(row=red, sticky=E)
-        red += 1
-        Label(desni_frame, text="lekar:").grid(row=red, sticky=E)
-        red += 1
-        Label(desni_frame, text="Lek:").grid(row=red, sticky=E)
-        red += 1
-        Label(desni_frame, text="Kolicina:").grid(row=red, sticky=E)
-
-        self.__pacijent_labela = Label(desni_frame)
-        self.__datum2_labela = Label(desni_frame)
-        self.__izvestaj_labela = Label(desni_frame)
-        self.__lekar_labela = Label(desni_frame)
-        self.__lek_labela = Label(desni_frame)
-        self.__kolicina_labela = Label(desni_frame)
-
-        red = 0
-        kolona = 1
-        self.__pacijent_labela.grid(row=red, column=kolona, sticky=W)
-        red += 1
-        self.__datum2_labela.grid(row=red, column=kolona, sticky=W)
-        red += 1
-        self.__izvestaj_labela.grid(row=red, column=kolona, sticky=W)
-        red += 1
-        self.__lekar_labela.grid(row=red, column=kolona, sticky=W)
-        red += 1
-        self.__lek_labela.grid(row=red, column=kolona, sticky=W)
-        red += 1
-        self.__kolicina_labela.grid(row=red, column=kolona, sticky=W)
-
-        red += 1
-        Label(desni_frame, text="", width = 50).grid(row=red,column=1)
-
-        # ------------>Button<------------
-
-        self.__prikazi_recept_button = Button(levi_frame, text="Prikazi" ,state=DISABLED,width=10, command=self.on_prikazi_recept)
-        self.__prikazi_recept_button.grid(row=3,column=0,padx=5,pady=5)
-        self.__nazad_button = Button(desni_frame, text ='Nazad', command=prikaz_recepata_pacijent.destroy,width=10)
-        self.__nazad_button.grid(row =red,column=0,padx=5,pady=5)
-
-        self.recepti_pacijent_listbox(filtrirani_recepti)
-
-
-    def recepti_pacijent_listbox(self, filtrirani_recepti):
-        self.__recepti_listbox.delete(0, END)
-
-        for recept in filtrirani_recepti:
-            self.__recepti_listbox.insert(END, recept.pacijent.ime +" " + recept.pacijent.prezime + " "
-                                          "|" + " "+ recept.lekar.ime + " " + recept.lekar.prezime)
-
-    def ispisi_labele_recept(self, recept):
-        self.__pacijent_labela['text'] = recept.pacijent.ime +" " + recept.pacijent.prezime
-        self.__datum2_labela['text'] = recept.datum
-        self.__izvestaj_labela['text'] = recept.izvestaj
-        self.__lekar_labela['text'] = recept.lekar.ime + " " + recept.lekar.prezime
-        self.__lek_labela['text'] = recept.lek.naziv
-        self.__kolicina_labela['text'] = recept.kolicina
-
-    def promena_selekcije_listbox_recept(self, evemt=None):
-        if not self.__recepti_listbox.curselection():
-            return
-        indeks = self.__recepti_listbox.curselection()[0]
-        self.__prikazi_recept_button['state'] = NORMAL
-        return indeks
-
-    def on_prikazi_recept(self):
-        indeks = self.promena_selekcije_listbox_recept()
-        filtrirani_recepti = self.__filtrirani_reepti
-        recept_za_prikaz = filtrirani_recepti[indeks]
-        self.ispisi_labele_recept(recept_za_prikaz)
-
-
-    # <--------RECEPTI END---------->
 
 
     def on_dodaj(self):
@@ -301,12 +313,12 @@ class DodavanjeProzorpacijenti(Toplevel):
 
 
         else: #izmena, pukne, nestane selekcija u listboxu
-            indeks = self.promena_selekcije_u_listboxu()
+            # indeks = self.promena_selekcije_u_listboxu()
+            #
+            # if indeks == -1:
+            #     return
 
-            if indeks == -1:
-                return
-
-            p = self.__pacijenti[indeks] #izbacuje ove gresku ako ne bude ni jedan izabran<<<<<<<<<<
+            p = self.__pacijenti[SELEKTOVAN_INDEKS] #izbacuje ove gresku ako ne bude ni jedan izabran<<<<<<<<<<
             jmbg = self.__jmbgTxt.get()
             ime = self.ime_validacija()
             if not ime:
@@ -318,21 +330,24 @@ class DodavanjeProzorpacijenti(Toplevel):
             lbo = self.__lboTxt.get()
             pac = Pacijent(jmbg, ime, prezime, datum, lbo, p.recepti)
             print(pac)
-
-            self.__pacijenti[indeks] = pac
-            sacuvaj_pacijente(self.__pacijenti)
-
-            # self.__pacijenti_listbox.selection_anchor(indeks)
-            # indeks = self.promena_selekcije_u_listboxu()
-            # izmenjeni_pacijent = self.__pacijenti[indeks]
-            # self.popuni_labele(izmenjeni_pacijent)
+            try:
+                self.__pacijenti[SELEKTOVAN_INDEKS] = pac
+                sacuvaj_pacijente(self.__pacijenti)
+            except TypeError:
+                messagebox.showerror('Greska', 'Kako bi izvrsili uspesnnu izmenu, morate da selektujete pacijenta kog menjate, ili odustanite.\nU suprotnom izmena ce biti pogresna')
+                return
+            self.__pacijenti_listbox.selection_anchor(SELEKTOVAN_INDEKS)
 
             self.popuni_pacijente_listbox()
+            self.popuni_labele(pac)
+
             self.zakljucaj_dugmice()
             self.disable_entry()
             self.ocisti_entry()
 
     def on_izmeni(self):
+        global SELEKTOVAN_INDEKS
+        SELEKTOVAN_INDEKS = self.promena_selekcije_u_listboxu()
         self.ocisti_labele()
         self.enable_entry()
         self.__sacuvajizmene_button['state']= NORMAL
@@ -359,11 +374,21 @@ class DodavanjeProzorpacijenti(Toplevel):
         if messagebox.askquestion("upozorenje", "Da li zelite da obrisete pacijenta, i njegove recepte?", icon="warning") == "no":
             return
 
-        indeks = self.promena_selekcije_u_listboxu()
+        indeks = self.promena_selekcije_u_listboxu() #ne moze ovako sada mu indeks bude 1 i obrise prvog
         if indeks >= 0:
-            self.__pacijenti.pop(indeks)
+            izbrani_pacijent  = self.__pacijenti.pop(indeks)
+            print(izbrani_pacijent)
+            svi_Recepti =ucitaj_recepte()
+            filtrirano = []
+            for recept in svi_Recepti:
+                if recept.pacijent.jmbg != izbrani_pacijent.jmbg:
+                    filtrirano.append(recept)
+            sacuvaj_recepte(filtrirano)
+
+
 
         sacuvaj_pacijente(self.__pacijenti)
+        self.__pacijenti = ucitaj_pacijente()
 
         self.popuni_pacijente_listbox()
         self.zakljucaj_dugmice()
@@ -372,12 +397,16 @@ class DodavanjeProzorpacijenti(Toplevel):
 
 
     def on_prikazi(self):
+
+        if not self.__pacijenti_listbox.curselection():
+            messagebox.showerror("greska", "Morate da selektujete pacijenta")
+            return None
         indeks = self.promena_selekcije_u_listboxu()
         pacijent = self.__pacijenti[indeks]
         # print(pacijent)
         self.popuni_labele(pacijent)
 
-        self.__PretragaTxt.set("")
+
 
         # self.__izmeni_button['state'] = NORMAL
         # self.__ukloni_button['state'] = NORMAL
@@ -391,6 +420,7 @@ class DodavanjeProzorpacijenti(Toplevel):
 
     def filtriraj(self, event=None):
         self.__pacijenti = ucitaj_pacijente()
+
         pojam = self.__PretragaTxt.get().lower()
         rezultat_pretrage = []
         for p in self.__pacijenti:
@@ -398,6 +428,8 @@ class DodavanjeProzorpacijenti(Toplevel):
                 rezultat_pretrage.append(p)
         self.__pacijenti = rezultat_pretrage
         self.popuni_pacijente_listbox()
+
+        self.__pacijenti = ucitaj_pacijente()
 
     def proveri_jmbg(self, jmbg):
         pacijenti = self.__pacijenti
@@ -615,8 +647,341 @@ class DodavanjeProzorpacijenti(Toplevel):
 class DodavanjeProzorLekari(Toplevel):
 
 
-    def on_prikazi_recept(self):
-        pass
+# -------------> PRIKAZ RECEPATA<-------------
+
+    def on_prikazirecept(self):
+        self.ocisti_labele()
+
+        if not self.__lekari_listbox.curselection():
+            messagebox.showerror("greska", "Morate da selektujete lekara")
+            return None
+
+        recepti = ucitaj_recepte()
+        filtrirani_recepti = []
+
+        indeks = self.promena_selekcije_u_listboxu()
+        lekar = self.__lekari[indeks]
+
+        for recept in recepti:
+            if lekar.jmbg == recept.lekar.jmbg:
+                filtrirani_recepti.append(recept)
+
+
+        prozor_recepti_lekari = Toplevel(self.master)
+        prozor_recepti_lekari.title("recepti")
+        prozor_recepti_lekari.geometry("650x350")
+
+        self.__filtrirani_recepti = filtrirani_recepti
+
+        # ------------>FRAME<------------
+
+        levi_frame = Frame(prozor_recepti_lekari, borderwidth=2, relief="ridge", padx=10, pady=10)
+        levi_frame.pack(side=LEFT, fill=BOTH, expand=1)
+
+        desni_frame = Frame(prozor_recepti_lekari, borderwidth=2, relief="ridge", padx=10, pady=10)
+        desni_frame.pack(side=RIGHT, fill=BOTH, expand=1)
+
+        # ------------>listbox<------------
+        self.__lekarirecepti_listbox = Listbox(levi_frame, width=43, activestyle="none")
+        self.__lekarirecepti_listbox.grid(row=2, column=0, pady=5, padx=5)
+        self.__lekarirecepti_listbox.bind("<<ListboxSelect>>", self.promena_selekcije_listbox_recept)
+
+        # ------------>LABELI<------------
+
+
+        Label(levi_frame, text="LISTA RECEPATA").grid(row=1, column=0, sticky=W)
+
+        red = 0
+        Label(desni_frame, text="Pacijent:").grid(row=red,sticky=E)  # sticky argument određuje horinzotalno poravnanje kolone (E, W), odnosno vertikalno poravnanje reda (N, S)
+        red += 1
+        Label(desni_frame, text="Datum i vreme:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="Izvestaj:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="lekar:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="Lek:").grid(row=red, sticky=E)
+        red += 1
+        Label(desni_frame, text="Kolicina:").grid(row=red, sticky=E)
+
+
+        self.__pacijent_labela = Label(desni_frame)
+        self.__datum2_labela = Label(desni_frame)
+        self.__izvestaj_labela = Label(desni_frame)
+        self.__lekar_labela = Label(desni_frame)
+        self.__lek_labela = Label(desni_frame)
+        self.__kolicina_labela = Label(desni_frame)
+
+        red = 0
+        kolona = 1
+        self.__pacijent_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__datum2_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__izvestaj_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__lekar_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__lek_labela.grid(row=red, column=kolona, sticky=W)
+        red += 1
+        self.__kolicina_labela.grid(row=red, column=kolona, sticky=W)
+
+        red += 1
+        Label(desni_frame, text="", width = 50).grid(row=red,column=1)
+
+        # ------------>Button<------------
+
+        self.__prikazi_recept_button = Button(levi_frame, text="Prikazi", state=DISABLED,  width=10,command=self.on_prikazi_r)
+        self.__prikazi_recept_button.grid(row=3, column=0, padx=5, pady=5)
+        self.__nazad_button = Button(desni_frame, text='Nazad', command=prozor_recepti_lekari.destroy , width=10)
+        self.__nazad_button.grid(row=red, column=0, padx=5, pady=5)
+
+
+        self.recepti_lekari_listbox(filtrirani_recepti)
+
+    def recepti_lekari_listbox(self,filtrirani_recepti):
+        self.__lekarirecepti_listbox.delete(0,END)
+
+        for recept in filtrirani_recepti:
+            self.__lekarirecepti_listbox.insert(END, recept.lekar.ime +" " + recept.lekar.prezime + " "
+                                          "|" + " "+ recept.pacijent.ime + " " + recept.pacijent.prezime)
+
+    def promena_selekcije_listbox_recept(self, evemt=None):
+        if not self.__lekarirecepti_listbox.curselection():
+            return
+
+        self.__prikazi_recept_button['state'] = NORMAL
+
+        indeks = self.__lekarirecepti_listbox.curselection()[0]
+        print(indeks)
+        return indeks
+
+    def ispisi_labele_recept(self, recept):
+        self.__pacijent_labela['text'] = recept.pacijent.ime +" " + recept.pacijent.prezime
+        self.__datum2_labela['text'] = recept.datum
+        self.__izvestaj_labela['text'] = recept.izvestaj
+        self.__lekar_labela['text'] = recept.lekar.ime + " " + recept.lekar.prezime
+        self.__lek_labela['text'] = recept.lek.naziv
+        self.__kolicina_labela['text'] = recept.kolicina
+
+    def on_prikazi_r(self):
+        indeks = self.promena_selekcije_listbox_recept()
+        filtrirani_recepti = self.__filtrirani_recepti
+        recept_za_prikaz = filtrirani_recepti[indeks]
+        self.ispisi_labele_recept(recept_za_prikaz)
+
+
+# ------------->RECEPTI END<-------------
+
+
+
+# ============>DODAVANJE LEKAR<============
+
+    def on_dodaj(self):
+        self.__PretragaTxt.set("")
+        self.popuni_lekare_listbox(self.__lekari)
+
+        # dodaj_prozor = DodajProzorLekar(self)
+        # self.wait_window(dodaj_prozor)
+        self.prozor_za_dodavanje_lekara = Toplevel(self.master)
+        self.prozor_za_dodavanje_lekara.title("DODAJ LEKARA")
+        self.prozor_za_dodavanje_lekara.geometry("480x230")
+
+        red = 0
+        Label(self.prozor_za_dodavanje_lekara, text="JMBG:").grid(row=red, sticky=E)
+        red += 1
+        Label(self.prozor_za_dodavanje_lekara, text="Ime:").grid(row=red, sticky=E)
+        red += 1
+        Label(self.prozor_za_dodavanje_lekara, text="Prezime:").grid(row=red, sticky=E)
+        red += 1
+        Label(self.prozor_za_dodavanje_lekara, text="Datum rodjenja:").grid(row=red, sticky=E)
+        red += 1
+        Label(self.prozor_za_dodavanje_lekara, text="Specijalizacija:").grid(row=red, sticky=E)
+
+        # ------------>button<------------
+
+        self.__dodaj_button = Button(self.prozor_za_dodavanje_lekara, text="Dodaj", width=10, command=self.on_dodaj2)
+        self.__dodaj_button.grid(row=5, padx=5, pady=5)
+        self.__povratak_button = Button(self.prozor_za_dodavanje_lekara, text='Odustani', width=10, command=self.prozor_za_dodavanje_lekara.destroy)
+        self.__povratak_button.grid(row=5, column=1, padx=5, pady=5)
+        # ------------>ENTRY<------------
+
+        self.__jmbgTxt = StringVar(self.prozor_za_dodavanje_lekara)
+        self.__imeTxt = StringVar(self.prozor_za_dodavanje_lekara)
+        self.__prezimeTxt = StringVar(self.prozor_za_dodavanje_lekara)
+        self.__datumTxt = StringVar(self.prozor_za_dodavanje_lekara)
+        self.__specTxt = StringVar(self.prozor_za_dodavanje_lekara)
+
+        self.__jmbg_entry = Entry(self.prozor_za_dodavanje_lekara, width=50, textvariable=self.__jmbgTxt)
+        self.__ime_entry = Entry(self.prozor_za_dodavanje_lekara, width=50,textvariable=self.__imeTxt)  # textvariable argument povezuje StringVar, IntVar i sl. objekte sa komponentom
+        self.__prezime_entry = Entry(self.prozor_za_dodavanje_lekara, width=50, textvariable=self.__prezimeTxt)
+        self.__datum_entry = Entry(self.prozor_za_dodavanje_lekara, width=50, textvariable=self.__datumTxt)
+        self.__spec_entry = Entry(self.prozor_za_dodavanje_lekara, width=50, textvariable=self.__specTxt)
+
+        red = 0
+        kolona = 1
+        self.__jmbg_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__ime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__prezime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__datum_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__spec_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+
+        self.focus_force()
+
+    def on_dodaj2(self):
+        jmbg = self.jmbg_validacija()
+        if not jmbg:
+            return
+        ime = self.ime_validacija()
+        if not ime:
+            return
+        prezime = self.prezime_validacija()
+        if not prezime:
+            return
+        datum = self.__datumTxt.get()
+        spec = self.specijalizacija_validacija()
+        if not spec:
+            return
+
+        l = Lekar(jmbg, ime, prezime, datum, spec, [])
+        lekari = ucitaj_lekare()
+        lekari.append(l)
+
+        self.__lekari = lekari
+        sacuvaj_lekare(self.__lekari)
+
+        self.popuni_lekare_listbox(self.__lekari)
+
+        self.__lekari_listbox.selection_set(END)
+        indeks = self.promena_selekcije_u_listboxu()
+        dodati_lekart = self.__lekari[indeks]
+        self.popuni_labele(dodati_lekart)
+
+
+        self.prozor_za_dodavanje_lekara.destroy()
+
+#============>DODAVANJE LEKAR END<============
+
+
+#============>izmena LEKAR <============
+
+    def on_izmeni(self):
+        global SELEKTOVANI_INDEKS_LEKAR
+        SELEKTOVANI_INDEKS_LEKAR = self.promena_selekcije_u_listboxu()
+
+        self.__PretragaTxt.set("")
+        # izmeni_prozor = IzmenaProzorLekar(self)
+        # self.wait_window(izmeni_prozor)
+
+        indeks = self.promena_selekcije_u_listboxu()
+        lekar = self.__lekari[indeks]
+
+        self.prozor_za_izmenu_lekara = Toplevel(self.master)
+
+        self.prozor_za_izmenu_lekara.title("DODAJ LEKARA")
+        self.prozor_za_izmenu_lekara.geometry("480x230")
+
+        # ------------>LABELI<------------
+
+        red = 0
+        Label( self.prozor_za_izmenu_lekara, text="JMBG:").grid(row=red, sticky=E)
+        red += 1
+        Label( self.prozor_za_izmenu_lekara, text="Ime:").grid(row=red, sticky=E)
+        red += 1
+        Label( self.prozor_za_izmenu_lekara, text="Prezime:").grid(row=red, sticky=E)
+        red += 1
+        Label( self.prozor_za_izmenu_lekara, text="Datum rodjenja:").grid(row=red, sticky=E)
+        red += 1
+        Label( self.prozor_za_izmenu_lekara, text="Specijalizacija:").grid(row=red, sticky=E)
+
+        # ------------>button<------------
+
+        self.__dodaj_button = Button( self.prozor_za_izmenu_lekara, text="Izmeni", width=10, command=self.on_izmeni2)
+        self.__dodaj_button.grid(row=5, padx=5, pady=5)
+        self.__povratak_button = Button(self.prozor_za_izmenu_lekara, text='Odustani', width=10,command= self.prozor_za_izmenu_lekara.destroy)
+        self.__povratak_button.grid(row=5, column=1, padx=5, pady=5)
+        # ------------>ENTRY<------------
+
+        self.__jmbgTxt = StringVar( self.prozor_za_izmenu_lekara)
+        self.__imeTxt = StringVar( self.prozor_za_izmenu_lekara)
+        self.__prezimeTxt = StringVar( self.prozor_za_izmenu_lekara)
+        self.__datumTxt = StringVar( self.prozor_za_izmenu_lekara)
+        self.__specTxt = StringVar( self.prozor_za_izmenu_lekara)
+
+        self.__jmbg_entry = Entry( self.prozor_za_izmenu_lekara, width=50, textvariable=self.__jmbgTxt, state='disabled',disabledbackground="#dfdfdf")
+        self.__ime_entry = Entry( self.prozor_za_izmenu_lekara, width=50,textvariable=self.__imeTxt)  # textvariable argument povezuje StringVar, IntVar i sl. objekte sa komponentom
+        self.__prezime_entry = Entry( self.prozor_za_izmenu_lekara, width=50, textvariable=self.__prezimeTxt)
+        self.__datum_entry = Entry( self.prozor_za_izmenu_lekara, width=50, textvariable=self.__datumTxt)
+        self.__spec_entry = Entry( self.prozor_za_izmenu_lekara, width=50, textvariable=self.__specTxt)
+
+        red = 0
+        kolona = 1
+        self.__jmbg_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__ime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__prezime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__datum_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+        red += 1
+        self.__spec_entry.grid(row=red, column=kolona, sticky=W, pady=5)
+
+        self.focus_force()
+        self.popuni_pri_izmeni_entri()
+
+    def popuni_pri_izmeni_entri(self):
+
+        self.__jmbg_entry.configure(state="disabled")
+        indeks = self.promena_selekcije_u_listboxu()
+        lekar = self.__lekari[indeks]
+        self.__jmbgTxt.set(lekar.jmbg)
+        self.__imeTxt.set(lekar.ime)
+        self.__datumTxt.set(lekar.datum_rodjenja)
+        self.__prezimeTxt.set(lekar.prezime)
+        self.__specTxt.set(lekar.specijalizacija)
+
+    def on_izmeni2(self):
+
+        l = self.__lekari[SELEKTOVANI_INDEKS_LEKAR]
+        print(l)
+
+        jmbg = self.__jmbgTxt.get()
+        ime = self.ime_validacija()
+        if not ime:
+            return
+        prezime = self.prezime_validacija()
+        if not prezime:
+            return
+        datum = self.__datumTxt.get()
+        spec = self.specijalizacija_validacija()
+        if not spec:
+            return
+
+        lekar = Lekar(jmbg, ime, prezime, datum, spec, l.recepti)
+        print(lekar)
+        try:
+            self.__lekari[SELEKTOVANI_INDEKS_LEKAR] = lekar
+            sacuvaj_lekare(self.__lekari)
+        except TypeError:
+            messagebox.showerror('Greska',
+                                 'Kako bi izvrsili uspesnnu izmenu, morate da selektujete pacijenta kog menjate, ili odustanite.\nU suprotnom izmena ce biti pogresna')
+            return
+
+        self.__lekari[SELEKTOVANI_INDEKS_LEKAR] = lekar
+
+
+        self.popuni_lekare_listbox(self.__lekari)
+        #izmenjeni_lekar = self.__lekari[SELEKTOVANI_INDEKS_LEKAR]
+        self.popuni_labele(lekar)
+
+        self.prozor_za_izmenu_lekara.destroy()
+
+#===============>END IZMENI<====================
+
 
     def filtriraj(self, evnet=None):
         self.__lekari = ucitaj_lekare()
@@ -627,6 +992,8 @@ class DodavanjeProzorLekari(Toplevel):
                 rezultat_pretrage.append(i)
         self.__lekari = rezultat_pretrage
         self.popuni_lekare_listbox( self.__lekari)
+
+        self.__lekari = ucitaj_lekare()
 
     def zakljucaj_dugmice(self):
         self.__izmeni_button1['state'] = DISABLED
@@ -639,10 +1006,19 @@ class DodavanjeProzorLekari(Toplevel):
             return
 
         indeks = self.promena_selekcije_u_listboxu()
+        svi_recepti = ucitaj_recepte()
+        filtrirani_recepti = []
         if indeks>=0:
-            self.__lekari.pop(indeks)
+            obrisani_lekar = self.__lekari.pop(indeks)
+            for recept in svi_recepti:
+                if obrisani_lekar.jmbg != recept.lekar.jmbg:
+                    filtrirani_recepti.append(recept)
+
+        sacuvaj_recepte(filtrirani_recepti)
 
         sacuvaj_lekare(self.__lekari)
+        self.__lekari = ucitaj_lekare()
+
         self.popuni_lekare_listbox( self.__lekari)
         self.zakljucaj_dugmice()
         DodajProzorLekar.focus_force(self)
@@ -663,7 +1039,7 @@ class DodavanjeProzorLekari(Toplevel):
 
         self.popuni_labele(lekar)
 
-        self.__PretragaTxt.set("")
+
 
     def ocisti_labele(self):
         self.__jmbg_labela["text"] = ''
@@ -672,7 +1048,7 @@ class DodavanjeProzorLekari(Toplevel):
         self.__datum_labela['text'] = ''
         self.__spec_labela['text'] = ''
 
-    def promena_selekcije_u_listboxu(self, event=None): #<------sta tacno znaci
+    def promena_selekcije_u_listboxu(self, event=None):
 
         if not self.__lekari_listbox.curselection():
             self.ocisti_labele()
@@ -682,6 +1058,7 @@ class DodavanjeProzorLekari(Toplevel):
         self.__izmeni_button1['state'] = NORMAL
         self.__ukloni_button['state'] = NORMAL
         self.__prikazi_button['state'] = NORMAL
+        self.__recepti_button['state'] = NORMAL
 
         indeks = self.__lekari_listbox.curselection()[0]
         print(indeks)
@@ -695,128 +1072,48 @@ class DodavanjeProzorLekari(Toplevel):
 
         self.ocisti_labele()
 
-
-    def on_dodaj(self):
-        self.__PretragaTxt.set("")
-        self.__lekari
-        self.popuni_lekare_listbox( self.__lekari) #ne radi,
-
-        # dodaj_prozor = DodajProzorLekar(self)
-        # self.wait_window(dodaj_prozor)
-        prozor_za_dodavanje_lekara = Toplevel(self.master) #sta znaci self master
-        prozor_za_dodavanje_lekara.title("DODAJ LEKARA")
-        prozor_za_dodavanje_lekara.geometry("480x230")
-
-        red = 0
-        Label(prozor_za_dodavanje_lekara, text="JMBG:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_dodavanje_lekara, text="Ime:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_dodavanje_lekara, text="Prezime:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_dodavanje_lekara, text="Datum rodjenja:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_dodavanje_lekara, text="Specijalizacija:").grid(row=red, sticky=E)
-
-        # ------------>button<------------
-
-        self.__dodaj_button = Button(prozor_za_dodavanje_lekara, text="Dodaj", width=10)
-        self.__dodaj_button.grid(row=5, padx=5, pady=5)
-        self.__povratak_button = Button(prozor_za_dodavanje_lekara, text='Odustani', width=10, command=prozor_za_dodavanje_lekara.destroy)
-        self.__povratak_button.grid(row=5, column=1, padx=5, pady=5)
-        # ------------>ENTRY<------------
-
-        self.__jmbgTxt = StringVar(prozor_za_dodavanje_lekara)
-        self.__imeTxt = StringVar(prozor_za_dodavanje_lekara)
-        self.__prezimeTxt = StringVar(prozor_za_dodavanje_lekara)
-        self.__datumTxt = StringVar(prozor_za_dodavanje_lekara)
-        self.__specTxt = StringVar(prozor_za_dodavanje_lekara)
-
-        self.__jmbg_entry = Entry(prozor_za_dodavanje_lekara, width=50, textvariable=self.__jmbgTxt)
-        self.__ime_entry = Entry(prozor_za_dodavanje_lekara, width=50,textvariable=self.__imeTxt)  # textvariable argument povezuje StringVar, IntVar i sl. objekte sa komponentom
-        self.__prezime_entry = Entry(prozor_za_dodavanje_lekara, width=50, textvariable=self.__prezimeTxt)
-        self.__datum_entry = Entry(prozor_za_dodavanje_lekara, width=50, textvariable=self.__datumTxt)
-        self.__spec_entry = Entry(prozor_za_dodavanje_lekara, width=50, textvariable=self.__specTxt)
-
-        red = 0
-        kolona = 1
-        self.__jmbg_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__ime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__prezime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__datum_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__spec_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-
-        self.focus_force()
-
-    def on_izmeni(self):
-        self.__PretragaTxt.set("")
-        # izmeni_prozor = IzmenaProzorLekar(self)
-        # self.wait_window(izmeni_prozor)
-
-        indeks = self.promena_selekcije_u_listboxu()
-        lekar = self.__lekari[indeks]
-
-        prozor_za_izmenu_lekara = Toplevel(self.master)
-
-        prozor_za_izmenu_lekara.title("DODAJ LEKARA")
-        prozor_za_izmenu_lekara.geometry("480x230")
-
-        # ------------>LABELI<------------
-
-        red = 0
-        Label(prozor_za_izmenu_lekara, text="JMBG:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_izmenu_lekara, text="Ime:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_izmenu_lekara, text="Prezime:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_izmenu_lekara, text="Datum rodjenja:").grid(row=red, sticky=E)
-        red += 1
-        Label(prozor_za_izmenu_lekara, text="Specijalizacija:").grid(row=red, sticky=E)
-
-        # ------------>button<------------
-
-        self.__dodaj_button = Button(prozor_za_izmenu_lekara, text="Izmeni", width=10, command=self.on_izmeni)
-        self.__dodaj_button.grid(row=5, padx=5, pady=5)
-        self.__povratak_button = Button(prozor_za_izmenu_lekara, text='Odustani', width=10,command=prozor_za_izmenu_lekara.destroy)
-        self.__povratak_button.grid(row=5, column=1, padx=5, pady=5)
-        # ------------>ENTRY<------------
-
-        self.__jmbgTxt = StringVar(prozor_za_izmenu_lekara)
-        self.__imeTxt = StringVar(prozor_za_izmenu_lekara)
-        self.__prezimeTxt = StringVar(prozor_za_izmenu_lekara)
-        self.__datumTxt = StringVar(prozor_za_izmenu_lekara)
-        self.__specTxt = StringVar(prozor_za_izmenu_lekara)
-
-        self.__jmbg_entry = Entry(prozor_za_izmenu_lekara, width=50, textvariable=self.__jmbgTxt, state='disabled')
-        self.__ime_entry = Entry(prozor_za_izmenu_lekara, width=50,textvariable=self.__imeTxt)  # textvariable argument povezuje StringVar, IntVar i sl. objekte sa komponentom
-        self.__prezime_entry = Entry(prozor_za_izmenu_lekara, width=50, textvariable=self.__prezimeTxt)
-        self.__datum_entry = Entry(prozor_za_izmenu_lekara, width=50, textvariable=self.__datumTxt)
-        self.__spec_entry = Entry(prozor_za_izmenu_lekara, width=50, textvariable=self.__specTxt)
-
-        red = 0
-        kolona = 1
-        self.__jmbg_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__ime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__prezime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__datum_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__spec_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-
-        self.focus_force()
-
-
     def komanda_izlaz(self):
         odgovor = messagebox.askokcancel("Proizvodi", "Da li ste sigurni da želite da napustite aplikaciju?",icon="warning")
         if odgovor:
             self.destroy()  # self pokazuje na tk klasu
+
+
+    def jmbg_validacija(self):
+        try:
+            jmbg = self.__jmbgTxt.get()
+            if len(str(jmbg)) != 13:
+                messagebox.showerror("Greska", "Jmbg mora da sadrzi tacno 13 karaktera!" + "{:>2} {}".format(len(str(jmbg)), "karaktera"))
+                return None
+        except TclError:
+            messagebox.showerror("Greška", "jmbg treba da bude sastavljen od brojeva")
+            return None
+
+        return jmbg
+
+    def ime_validacija(self):
+        ime = self.__imeTxt.get()
+
+        if len(ime) < 1:
+            messagebox.showerror("Greska", "ime mora da sadrzi bar 2 karaktera!")
+            return None
+
+        return  ime
+
+    def prezime_validacija(self):
+        prezime = self.__prezimeTxt.get()
+        if len(prezime) < 2:
+            messagebox.showerror("Greska", "Prezime mora da sadrzi bar 2 karaktera!")
+            return None
+
+        return prezime
+
+    def specijalizacija_validacija(self):
+        spec = self.__specTxt.get()
+        if len(spec) < 2:
+            messagebox.showerror("Greska", "Specijalizacija mora da sadrzi bar 2 karaktera!")
+            return None
+
+        return spec
 
 
     def __init__(self, master):
@@ -879,7 +1176,7 @@ class DodavanjeProzorLekari(Toplevel):
         self.__dodaj_button = Button(desni_frame, text="Dodaj", width=10, command=self.on_dodaj)
         self.__izmeni_button1 = Button(desni_frame, text="Izmeni", state = DISABLED,  width=10, command=self.on_izmeni)
         self.__prikazi_button = Button(levi_frame, text="Prikazi", state=DISABLED, width=10, command = self.on_prikazi)
-        self.__recepti_button = Button(desni_frame, text="Recept", state=DISABLED, width=10, command=self.on_prikazi_recept)
+        self.__recepti_button = Button(desni_frame, text="Recept", state=DISABLED, width=10, command=self.on_prikazirecept)
         self.__ukloni_button = Button(desni_frame, text="Obriši", state=DISABLED, width=10, command=self.on_obrisi)
         # self.__filtriraj_button = Button(levi_frame, text="Pretraga", width=10, command=self.filtriraj)
 
@@ -906,10 +1203,6 @@ class DodavanjeProzorLekari(Toplevel):
         self.__pretraga_entry = Entry(levi_frame, width=50, textvariable=self.__PretragaTxt)
         self.__pretraga_entry.grid(row=4, column=0, sticky=W, pady=(5, 5))
         self.__pretraga_entry.bind("<KeyRelease>", self.filtriraj)
-
-
-
-
 
         # red = 8
         # Label(desni_frame, text="JMBG:").grid(row=red, sticky=E)
@@ -963,266 +1256,8 @@ class DodavanjeProzorLekari(Toplevel):
         self.focus_force()
 
 
-class DodajProzorLekar(Toplevel):
-
-    def on_odustani(self):
-        self.__jmbgTxt.set('')
-        self.__imeTxt.set('')
-        self.__prezimeTxt.set('')
-        self.__datumTxt.set('')
-        self.__specTxt.set('')
-
-        self.destroy()
-
-    def on_dodaj(self):
-        jmbg = self.jmbg_validacija()
-        if not jmbg:
-            return
-        ime = self.ime_validacija()
-        if not ime:
-            return
-        prezime = self.prezime_validacija()
-        if not prezime:
-            return
-        datum = self.__datumTxt.get()
-        spec = self.specijalizacija_validacija()
-        if not spec:
-            return
-
-        l = Lekar(jmbg, ime, prezime, datum,spec,[])
-        lekari = ucitaj_lekare()
-        lekari.append(l)
-
-        self.__lekari = lekari
-        sacuvaj_lekare(self.__lekari)
-
-        DodajProzorLekar.destroy(self)
-
-
-    def jmbg_validacija(self):
-        try:
-            jmbg = self.__jmbgTxt.get()
-            if len(str(jmbg)) != 13:
-                messagebox.showerror("Greska", "Jmbg mora da sadrzi tacno 13 karaktera!" + "{:>2} {}".format(len(str(jmbg)), "karaktera"))
-                return None
-        except TclError:
-            messagebox.showerror("Greška", "jmbg treba da bude sastavljen od brojeva")
-            return None
-
-        return jmbg
-
-    def ime_validacija(self):
-        ime = self.__imeTxt.get()
-
-        if len(ime) < 1:
-            messagebox.showerror("Greska", "ime mora da sadrzi bar 2 karaktera!")
-            return None
-
-        return  ime
-
-    def prezime_validacija(self):
-        prezime = self.__prezimeTxt.get()
-        if len(prezime) < 2:
-            messagebox.showerror("Greska", "Prezime mora da sadrzi bar 2 karaktera!")
-            return None
-
-        return prezime
-
-    def specijalizacija_validacija(self):
-        spec = self.__specTxt.get()
-        if len(spec) < 2:
-            messagebox.showerror("Greska", "Specijalizacija mora da sadrzi bar 2 karaktera!")
-            return None
-
-        return spec
-
-
-    def __init__(self, master):
-        super().__init__(master)
-
-        # self.__lekari = ucitaj_lekare() #da li ovo moze ovako     <<<============================
-
-
-
-
-        self.geometry("480x230")
-        self.title('DODAVANJE')
-
-
-    # ------------>LABELI<------------
-
-        red = 0
-        Label(self, text="JMBG:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Ime:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Prezime:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Datum rodjenja:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Specijalizacija:").grid(row=red, sticky=E)
-
-    # ------------>button<------------
-
-        self.__dodaj_button = Button(self, text="Dodaj", width=10, command=self.on_dodaj)
-        self.__dodaj_button.grid(row=5, padx=5,pady=5)
-        self.__povratak_button = Button(self, text='Odustani', width=10, command=self.on_odustani)
-        self.__povratak_button.grid(row=5,column=1, padx=5,pady=5)
-
-
-    # ------------>ENTRY<------------
-
-        self.__jmbgTxt = StringVar(master)
-        self.__imeTxt = StringVar(master)
-        self.__prezimeTxt = StringVar(master)
-        self.__datumTxt = StringVar(master)
-        self.__specTxt = StringVar(master)
-
-        self.__jmbg_entry = Entry(self, width=50, textvariable=self.__jmbgTxt)
-        self.__ime_entry = Entry(self, width=50, textvariable=self.__imeTxt)  # textvariable argument povezuje StringVar, IntVar i sl. objekte sa komponentom
-        self.__prezime_entry = Entry(self, width=50, textvariable=self.__prezimeTxt)
-        self.__datum_entry = Entry(self, width=50, textvariable=self.__datumTxt)
-        self.__spec_entry = Entry(self, width=50, textvariable=self.__specTxt)
-
-
-        red = 0
-        kolona = 1
-        self.__jmbg_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__ime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__prezime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__datum_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__spec_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-
-        self.focus_force()
-
-
-class IzmenaProzorLekar(Toplevel):
-
-    def on_prikazi(self):
-        pass
-        # indeks = DodavanjeProzorLekari.indeks
-        # lekari = ucitaj_lekare()
-        # lekar = lekari[indeks]
-        # self.__jmbgTxt.set(lekar.jmbg)
-        # self.__imeTxt.set(lekar.ime)
-        # self.__prezimeTxt.set(lekar.prezime)
-        # self.__datumTxt.set(lekar.datum_rodjenja)
-        # self.__specTxt.set(lekar.specijalizacija)
-
-
-
-    def on_izmeni(self):
-        pass
-        # indeks = DodavanjeProzorLekari.indeks
-        # if indeks == -1:
-        #     return
-        # self.__lekari = ucitaj_lekare()
-        # l = self.__lekari[indeks]
-        #
-        # jmbg = self.__jmbgTxt.get()
-        # if not jmbg:
-        #     return
-        # ime = self.ime_validacija()
-        # if not ime:
-        #     return
-        # prezime = self.prezime_validacija()
-        # if not prezime:
-        #     return
-        # datum = self.__datumTxt.get()
-        # spec = self.specijalizacija_validacija()
-        # if not spec:
-        #     return
-        # lekar = Lekar(jmbg, ime, prezime, datum,spec,[])
-        # self.__lekari[indeks] = lekar
-        # sacuvaj_lekare(self.__lekari)
-
-
-    def ime_validacija(self):
-        ime = self.__imeTxt.get()
-
-        if len(ime) < 1:
-            messagebox.showerror("Greska", "ime mora da sadrzi bar 2 karaktera!")
-            return None
-
-        return  ime
-
-    def prezime_validacija(self):
-        prezime = self.__prezimeTxt.get()
-        if len(prezime) < 2:
-            messagebox.showerror("Greska", "Prezime mora da sadrzi bar 2 karaktera!")
-            return None
-
-        return prezime
-
-    def specijalizacija_validacija(self):
-        spec = self.__specTxt.get()
-        if len(spec) < 2:
-            messagebox.showerror("Greska", "Specijalizacija mora da sadrzi bar 2 karaktera!")
-            return None
-
-        return spec
-
-    def __init__(self, master):
-        super().__init__(master)
-        self.geometry("480x230")
-        self.title('IZMENA')
-
-        # ------------>LABELI<------------
-
-        red = 0
-        Label(self, text="JMBG:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Ime:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Prezime:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Datum rodjenja:").grid(row=red, sticky=E)
-        red += 1
-        Label(self, text="Specijalizacija:").grid(row=red, sticky=E)
-
-        # ------------>button<------------
-
-        self.__dodaj_button = Button(self, text="Izmeni", width=10, command=self.on_izmeni)
-        self.__dodaj_button.grid(row=5, padx=5, pady=5)
-        self.__prikazi_button= Button(self, text="Prikazi lekara za izmenu", width=20, command=self.on_prikazi)
-        self.__prikazi_button.grid(row=5, padx=5, pady=5 , sticky=W)
-        # ------------>ENTRY<------------
-
-        self.__jmbgTxt = StringVar(master)
-        self.__imeTxt = StringVar(master)
-        self.__prezimeTxt = StringVar(master)
-        self.__datumTxt = StringVar(master)
-        self.__specTxt = StringVar(master)
-
-        self.__jmbg_entry = Entry(self, width=50,  textvariable=self.__jmbgTxt, state='disabled')
-        self.__ime_entry = Entry(self, width=50, textvariable=self.__imeTxt)  # textvariable argument povezuje StringVar, IntVar i sl. objekte sa komponentom
-        self.__prezime_entry = Entry(self, width=50, textvariable=self.__prezimeTxt)
-        self.__datum_entry = Entry(self, width=50, textvariable=self.__datumTxt)
-        self.__spec_entry = Entry(self, width=50, textvariable=self.__specTxt)
-
-        red = 0
-        kolona = 1
-        self.__jmbg_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__ime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__prezime_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__datum_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-        red += 1
-        self.__spec_entry.grid(row=red, column=kolona, sticky=W, pady=5)
-
-        self.focus_force()
-
-
-
-
-
 class ProzorLekovi(Toplevel):
+
     def on_odustani(self):
         self.ocisti_entry()
         self.disable_entry()
@@ -1248,8 +1283,9 @@ class ProzorLekovi(Toplevel):
         self.__proizvodjac_entry.configure(state="normal")
         self.__tipleka_entry.configure(state="normal")
 
-    def on_sacuvaj(self):
+    def on_sacuvaj(self,indeks=-1):
         if self.__selektovani is None:
+            l = self.__lekovi[indeks]
             jkl = self.jkl_validacija()
             if not jkl:
                 return
@@ -1263,9 +1299,9 @@ class ProzorLekovi(Toplevel):
             if not tip:
                 return
 
-            l = Lek(jkl,naziv,proiz,tip,[])
+            lek = Lek(jkl,naziv,proiz,tip,[])
             lekovi = ucitaj_lekovi()
-            lekovi.append(l)
+            lekovi.append(lek)
             self.__lekovi = lekovi
             sacuvaj_lekovi(self.__lekovi)
             self.popuni_lekove_listbox()
@@ -1276,13 +1312,13 @@ class ProzorLekovi(Toplevel):
             self.popuni_labele(dodati_lrk)
 
 
-
             self.ocisti_entry()
             self.disable_entry()
             self.zakljucaj_dugmice()
 
         else: #izmena, pukne nekad program nzm zasto nekad nee wtffff <===================
-            indeks = self.prmena_selekcije_u_listboxu()
+            #indeks = self.prmena_selek7cije_u_listboxu()
+            indeks = SELEKTOVAN_INDEKS
 
             l = self.__lekovi[indeks]
 
@@ -1298,14 +1334,16 @@ class ProzorLekovi(Toplevel):
                 return
             lek = Lek(jkl,naziv,proiz,tip, l.recepti)
 
-            self.__lekovi[indeks] = lek
+            self.__lekovi[SELEKTOVAN_INDEKS] = lek
             sacuvaj_lekovi(self.__lekovi)
             self.popuni_lekove_listbox()
+
+            self.popuni_labele(lek)
 
 
             self.ocisti_entry()
             self.disable_entry()
-            self.zakljucaj_dugmice()
+            self.__izmeni_button['state'] = DISABLED
 
     def on_izmeni(self):
         self.ocisti_labele()
@@ -1353,6 +1391,7 @@ class ProzorLekovi(Toplevel):
                 rezultat_pretrage.append(i)
         self.__lekovi = rezultat_pretrage
         self.popuni_lekove_listbox()
+        self.__lekovi = ucitaj_lekovi() #kad stavim ne sjebe prilikom brisanja ali obrise prvog?<-----------------------------------------------------
 
 
     def on_obrisi(self):
@@ -1360,8 +1399,15 @@ class ProzorLekovi(Toplevel):
             return
 
         indeks = self.prmena_selekcije_u_listboxu()
+        filtrirani_recepti = []
+        sviRecepti = ucitaj_recepte()
         if indeks >= 0:
-            self.__lekovi.pop(indeks)
+            obrisani_lek = self.__lekovi.pop(indeks)
+            for recept in sviRecepti:
+                if obrisani_lek.jkl != recept.lek.jkl:
+                    filtrirani_recepti.append(recept)
+
+        sacuvaj_recepte(filtrirani_recepti)
 
         sacuvaj_lekovi(self.__lekovi)
         self.popuni_lekove_listbox()
@@ -1374,16 +1420,21 @@ class ProzorLekovi(Toplevel):
         self.__tip_leka_labela['text'] = lek.tip_leka
 
     def on_prikazi(self):
+
         indeks = self.prmena_selekcije_u_listboxu()
-        lek = self.__lekovi[indeks]
+
+        try:
+            lek = self.__lekovi[indeks]
+        except TypeError:
+            messagebox.showerror('greska', 'morate selektovati lek')
+            return
         print(lek)
         self.popuni_labele(lek)
 
     def zakljucaj_dugmice(self):
         self.__izmeni_button['state'] = DISABLED
         self.__ukloni_button['state'] = DISABLED
-        self.__dodaj_button['state'] = DISABLED
-        self.__odustani_button['state'] = DISABLED
+
 
     def prmena_selekcije_u_listboxu(self, event = None):
         if not self.__lekovi_listbox.curselection():
@@ -1395,6 +1446,7 @@ class ProzorLekovi(Toplevel):
         self.__izmeni_button['state'] = NORMAL
         self.__ukloni_button['state'] = NORMAL
         self.__prikazi_button['state'] = NORMAL
+        self.__dodaj_button['state'] = NORMAL
         self.ocisti_labele()
 
 
@@ -1611,9 +1663,226 @@ class ProorRecepti(Toplevel):
         pass
 
     def on_dodaj(self):
+
+        self.prozor_za_dodavanje = Toplevel(self.master)
+        self.prozor_za_dodavanje.geometry("700x500")
+
+        # ------------>FRAME<------------
+
+        frame = Frame(self.prozor_za_dodavanje, borderwidth=2, relief="ridge", padx=10, pady=10)
+        frame.pack( fill=BOTH, expand=1)
+
+        # ------------>COMBOBOX<------------
+        pacijenti = []
+        for pacijent in self.__pacijenti:
+            pacijenti.append(pacijent.ime + " " + pacijent.prezime)
+
+        self.__pacijent_combobox = Combobox(frame, width=25, state="readonly", values=pacijenti)
+        self.__pacijent_combobox.grid(row=0, column = 1, padx=5,pady=5)
+
+
+        lekovi= []
+        self.__lekovi = ucitaj_lekovi()
+
+        for lek in self.__lekovi:
+            lekovi.append(lek.naziv)
+
+        Label(frame, height = 5).grid(row=1)
+
+        self.__lekovi_combobox = Combobox(frame, width=25, state="readonly", values=lekovi)
+        self.__lekovi_combobox.grid(row=1, column = 1, padx=5,pady=5)
+
+
+        lekari= []
+        self.__lekari = ucitaj_lekare()
+
+        for lekar in self.__lekari:
+            lekari.append(lekar.ime + " " + lekar.prezime)
+
+        # Label(frame, height = 5).grid(row=1)
+
+        self.__lekari_combobox = Combobox(frame, width=25, state="readonly", values=lekari)
+        self.__lekari_combobox.grid(row=3, column=1, padx=5,pady=5)
+
+        # ------------>LABELI<------------
+
+        red = 0
+        Label(frame, text="Pacijent:").grid(row=red, column = 0, padx=5,pady=5, sticky=E)
+        red += 1
+        Label(frame, text="Lekovi:").grid(row=red, column=0, sticky=E,  padx=5,pady=5)
+        red += 1
+        Label(frame).grid(row=red)
+        red += 1
+        Label(frame, text="Lekari:").grid(row=red,column=0,  sticky=E, padx=5,pady=5)
+
+        # ------------>ENTRY<------------
+        red = 0
+        Label(frame, text="Izvstaj:").grid(row=red, column= 2,sticky=E, padx=5,pady=5)
+        red += 1
+        Label(frame, text="Datum i vreme:").grid(row=red, column= 2,sticky=E, padx=5,pady=5)
+        red += 1
+        Label(frame, text="Kolicina:").grid(row=red, column= 2,sticky=E, padx=5,pady=5)
+
+        self.__izvestajTxt = StringVar(frame)
+        self.__datumTxt = StringVar(frame)
+        self.__kolicinaTxt = StringVar(frame)
+
+        self.__izvesta_entry = Entry(frame, width=50, textvariable=self.__izvestajTxt, state='disabled')
+        self.__datum_entry = Entry(frame, width=50, textvariable=self.__datumTxt, state='disabled')
+        self.__kolicina_entry = Entry(frame, width=50, textvariable=self.__kolicinaTxt, state='disabled')
+
+        red = 0
+        kolona = 3
+        self.__izvesta_entry.grid(row=red, column=kolona, sticky=W, padx=5,pady=5)
+        red += 1
+        self.__datum_entry.grid(row=red, column=kolona, sticky=W, padx=5,pady=5)
+        red += 1
+        self.__kolicina_entry.grid(row=red, column=kolona, sticky=W, padx=5,pady=5)
+
+        # ------------>button<------------
+        red += 1
+
+        self.__dodaj1_button = Button(frame, text="Sacuvaj", width=10, command=self.on_dodaj1)
+        self.__dodaj1_button.grid(row=red, column=3, sticky=W, padx=9, pady=5)
+
+        self.__odustani_button = Button(frame, text='Odustani', width=10, command=self.prozor_za_dodavanje.destroy)
+        self.__odustani_button.grid(row=red, column=3, sticky=E, padx=5, pady=5)
+
+    def on_dodaj1(self):
         pass
+
+
+    # ------------>DODAVANJE RECEPATA END<------------
+
+
+
+    # ------------>IZMENA RECEPATA END<------------
+    def popuni_komboboxove(self, odabrani_recept):
+        self.__lekari_combobox.insert(END, odabrani_recept.lekar.ime + " "+odabrani_recept.lekar.prezime)
+
+
+
+
     def on_izmeni(self):
-        pass
+
+        prozor_za_izmenu = Toplevel(self.master)
+        prozor_za_izmenu.geometry("700x500")
+
+        # ------------>FRAME<------------
+
+        frame = Frame(prozor_za_izmenu, borderwidth=2, relief="ridge", padx=10, pady=10)
+        frame.pack(fill=BOTH, expand=1)
+
+        # ------------>COMBOBOX<------------
+        pacijenti = []
+        for pacijent in self.__pacijenti:
+            pacijenti.append(pacijent.ime + " " + pacijent.prezime)
+
+        self.__pacijent_combobox = Combobox(frame, width=25, state="readonly", values=pacijenti)
+        self.__pacijent_combobox.grid(row=0, column=1, padx=5, pady=5)
+
+        lekovi = []
+        self.__lekovi = ucitaj_lekovi()
+
+        for lek in self.__lekovi:
+            lekovi.append(lek.naziv)
+
+        Label(frame, height=5).grid(row=1)
+
+        self.__lekovi_combobox = Combobox(frame, width=25, state="readonly", values=lekovi)
+        self.__lekovi_combobox.grid(row=1, column=1, padx=5, pady=5)
+
+        lekari = []
+        self.__lekari = ucitaj_lekare()
+
+        for lekar in self.__lekari:
+            lekari.append(lekar.ime + " " + lekar.prezime)
+
+        # Label(frame, height = 5).grid(row=1)
+
+        self.__lekari_combobox = Combobox(frame, width=25, state="readonly", values=lekari)
+        self.__lekari_combobox.grid(row=3, column=1, padx=5, pady=5)
+
+        # ------------>LABELI<------------
+
+        red = 0
+        Label(frame, text="Pacijent:").grid(row=red, column=0, padx=5, pady=5, sticky=E)
+        red += 1
+        Label(frame, text="Lekovi:").grid(row=red, column=0, sticky=E, padx=5, pady=5)
+        red += 1
+        Label(frame).grid(row=red)
+        red += 1
+        Label(frame, text="Lekari:").grid(row=red, column=0, sticky=E, padx=5, pady=5)
+
+        # ------------>ENTRY<------------
+        red = 0
+        Label(frame, text="Izvstaj:").grid(row=red, column=2, sticky=E, padx=5, pady=5)
+        red += 1
+        Label(frame, text="Datum i vreme:").grid(row=red, column=2, sticky=E, padx=5, pady=5)
+        red += 1
+        Label(frame, text="Kolicina:").grid(row=red, column=2, sticky=E, padx=5, pady=5)
+
+        self.__izvestajTxt = StringVar(frame)
+        self.__datumTxt = StringVar(frame)
+        self.__kolicinaTxt = StringVar(frame)
+
+        self.__izvesta_entry = Entry(frame, width=50, textvariable=self.__izvestajTxt, state='disabled')
+        self.__datum_entry = Entry(frame, width=50, textvariable=self.__datumTxt, state='disabled')
+        self.__kolicina_entry = Entry(frame, width=50, textvariable=self.__kolicinaTxt, state='disabled')
+
+        red = 0
+        kolona = 3
+        self.__izvesta_entry.grid(row=red, column=kolona, sticky=W, padx=5, pady=5)
+        red += 1
+        self.__datum_entry.grid(row=red, column=kolona, sticky=W, padx=5, pady=5)
+        red += 1
+        self.__kolicina_entry.grid(row=red, column=kolona, sticky=W, padx=5, pady=5)
+
+        # ------------>button<------------
+        red += 1
+
+        self.__dodaj2_button = Button(frame, text="Sacuvaj", width=10, command=self.on_izmeni2)
+        self.__dodaj2_button.grid(row=red, column=3, sticky=W, padx=9, pady=5)
+
+        self.__odustani2_button = Button(frame,  text='Odustani', width=10, command=prozor_za_izmenu.destroy)
+        self.__odustani2_button.grid(row=red, column=3, sticky=E, padx=5, pady=5)
+
+        indeks = self.__pacijent_combobox.current()
+        print(indeks)
+        obelezeni = self.__pacijenti[SELEKTOVAN_PACIJENT]
+        print(obelezeni)
+        print(indeks)
+        indeks = self.__recepti_listbox.curselection()[0]
+        recepti_za_odabranog = []
+        print("posle indeks",indeks)
+        self.__recepti = ucitaj_recepte()
+        for recept in self.__recepti:
+            print(recept.pacijent.jmbg,obelezeni.jmbg)
+            if recept.pacijent.jmbg == obelezeni.jmbg:
+                recepti_za_odabranog.append(recept)
+        print(indeks,recepti_za_odabranog)
+        odabrani_recept = recepti_za_odabranog[indeks]
+        self.popuni_komboboxove(odabrani_recept)
+
+    def on_izmeni2(self):
+       pass
+
+
+
+
+    # ------------>IZMENA RECEPATA END<------------
+
+    def popunili_smo(self,event=None):
+        self.__recepti_listbox.delete(0,END)
+        global SELEKTOVAN_PACIJENT
+        print()
+
+        SELEKTOVAN_PACIJENT = self.__pacijent_combobox.current()
+        obelezni = self.__pacijenti[SELEKTOVAN_PACIJENT]
+        for recept in self.__recepti:
+            if recept.pacijent.jmbg == obelezni.jmbg:
+                self.__recepti_listbox.insert(END, recept.lek.naziv + " " + recept.kolicina)
+
 
     def __init__(self, master):
         super().__init__(master)
@@ -1640,7 +1909,7 @@ class ProorRecepti(Toplevel):
         print(pacijenti)
 
         self.__pacijent_combobox = Combobox(levi_frame, width=25, state="readonly", values=pacijenti)
-
+        self.__pacijent_combobox.bind('<<ComboboxSelected>>', self.popunili_smo)
         self.__pacijent_combobox.grid(row=0)
 
         # ------------>listbox<------------
@@ -1695,7 +1964,7 @@ class ProorRecepti(Toplevel):
         # ------------>button<------------
 
         self.__dodaj_button = Button(desni_frame, text="Dodaj", width=10, command=self.on_dodaj)
-        self.__izmeni_button = Button(desni_frame, text="Izmeni", state=DISABLED, width=10, command=self.on_izmeni)
+        self.__izmeni_button = Button(desni_frame, text="Izmeni", width=10, command=self.on_izmeni)
         self.__ukloni_button = Button(desni_frame, text="Obriši", state=DISABLED, width=10, command=self.on_obrisi)
 
         red += 1
@@ -1703,46 +1972,46 @@ class ProorRecepti(Toplevel):
         self.__dodaj_button.grid(row=red, column=1, sticky=W, padx=9, pady=5)
         self.__izmeni_button.grid(row=red, column=2,sticky=E, padx=9, pady=5)
 
+
+        # ------------>za dodavanje i izmenu<------------
+
+
+
+
 def main():
     glavni_prozor = AppGui()
 
     glavni_prozor.mainloop()
-
-    # p1 = Pacijent("1231231231231","milos","obilic","01.01.2001","1234567",[])
-    # p2 = Pacijent("1231231231231", "zoran", "obilic", "01.01.2002", "1234561", [])
-    # p3 = Pacijent("1231231231231", "marko", "obilic", "01.01.2003", "1234562", [])
-    # p4 = Pacijent("1231231231231", "milan", "obilic", "01.01.2004", "1234563", [])
-    # pacijenti = [p1, p2]
+    #
+    # p1 = Pacijent("2105001800456","Aleksa","Cosovic","21.05.2001.","12587532753",[])
+    # p2 = Pacijent("2103998800776", "Stefan", "Markovic", "21.03.1999.", "97867452086", [])
+    # p3 = Pacijent("2307970800998", "Ivan", "Orosic", "23.07.1970.", "63932517585", [])
+    # p4 = Pacijent("0304965008055", "Milana", "Dobric", "03.04.1965.", "06847284751", [])
+    # pacijenti = [p1, p2,p3,p4]
     # sacuvaj_pacijente(pacijenti)
     #
     #
     #
-    # l1 = Lekar("1231231231231","milos","obilic","01.01.2001", "Ginekolog",[])
-    # l2 = Lekar("1231231231231", "zoran", "obilic", "01.01.2002",  "Dermatolog", [])
-    # l3 = Lekar("1231231231231", "milan", "obilic", "01.01.2004", "neuro hirurgija", [])
+    # l1 = Lekar("1805989529172","Danilo","Cosovic","18.05.1989.", "Psihoterapeut",[])
+    # l2 = Lekar("1804983636387", "Luka", "krtinic", "18.04.1983.",  "Dermatolog", [])
+    # l3 = Lekar("1803985727362", "Ana", "Prokic", "18.03.1985.", "Psiholog", [])
     #
-    # lekari =[l1,l2,l3]
+    # lekari = [l1,l2,l3]
     # sacuvaj_lekare(lekari)
     #
     #
-    # lek1 = Lek("11111111","andol", "galenika", "antibiotik", [])
-    # lek2 = Lek("22222222", "brufen", "galenika", "antibiotik", [])
-    # lek3 = Lek("33333333", "paracetanol", "sinofarm", "antibiotik", [])
-    #
-    # lekovi = [lek1, lek2, lek3]
+    # lek1 = Lek("2157101","Andol", "Galenika", "Antibiotik", [])
+    # lek2 = Lek("1122460", "Brufen", "Pharmanova", "Analgetik", [])
+    # lek3 = Lek("1122846", "Paracetanol", "Hemofarm", "Antiseptik", [])
+    # lekovi= [lek1,lek2,lek3]
     # sacuvaj_lekovi(lekovi)
     #
-    # p1 = Pacijent("1231231231231", "milos", "obilic", "01.01.2001", "1234567", [])
-    # p2 = Pacijent("1231231231231", "zoran", "obilic", "01.01.2002", "1234561", [])
-    # l1 = Lekar("1231231231231", "milos", "obilic", "01.01.2001", "Ginekolog", [])
-    # l2 = Lekar("1231231231231", "zoran", "obilic", "01.01.2002", "Dermatolog", [])
-    # lek1 = Lek("11111111", "andol", "galenika", "antibiotik", [])
-    # lek2 = Lek("22222222", "brufen", "galenika", "antibiotik", [])
-    #
-    # r1 = Recept(p1, "21.05.2001", "stanje bolje", l1,lek1, "12")
-    # r2 = Recept(p2, "21.05.2001", "stanje gore", l2, lek2, "4")
-    # recepti = [r1, r2]
+    # r1 = Recept(p1, "21.05.2021", "stanje bolje", l1, lek1, "12")
+    # r2 = Recept(p2, "11.07.2013", "stanje gore", l2, lek2, "4")
+    # r3 = Recept(p3, "07.04.2019", "stabilno stanje)",l2,lek3,"2")
+    # recepti = [r1, r2,r3]
     # sacuvaj_recepte(recepti)
+    #
 
 main()
 

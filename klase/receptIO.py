@@ -1,12 +1,12 @@
-import json
-datoteka = '../datoteke/recepti.json'
+import pickle
+datoteka = '../datoteke/recepti.pickle'
 
-def sacuvaj_recepti(recepti):
-    with open(datoteka, "w") as f:
-        json.dump(recepti, f, indent=4)
+def sacuvaj_recepte(recepti):
+    with open(datoteka, "wb") as f:
+        pickle.dump(recepti, f)
 
-def ucitaj_knjige():
-    with open(datoteka) as f:
-        recepti = json.load(f)
+def ucitaj_recepte():
+    with open(datoteka,"rb") as f:
+        recepti = pickle.load(f)
         return recepti
 

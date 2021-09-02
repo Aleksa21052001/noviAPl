@@ -130,7 +130,6 @@ class Recept:
         return pacijent in self.__pacijent
 
 
-
     def __init__(self, pacijent, datum_i_vreme, izvestaj, lekar, lek, kolicina):
         self.__pacijent = pacijent
         self.__datum = datum_i_vreme
@@ -138,6 +137,10 @@ class Recept:
         self.__lekar = lekar
         self.__lek = lek
         self.__kolicina = kolicina
+
+
+
+
 
 
 def test():

@@ -87,7 +87,8 @@ class Lek:
 
 
 class Recept:
-
+    def __str__(self):
+        return self.pacijent.ime + " " + self.lekar.ime + " " + self.lek.naziv + " " + self.kolicina
     @property
     def pacijent(self):
         return self.__pacijent

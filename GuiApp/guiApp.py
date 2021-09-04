@@ -9,20 +9,15 @@ from  klase.lekIIO import ucitaj_lekovi, sacuvaj_lekovi
 from  klase.receptIO import ucitaj_recepte, sacuvaj_recepte
 import datetime
 
-# datum = datetime.datetime(2021,9,5)
-# print(datum)
-# danas = datetime.datetime.now()
-# if datum < danas:
-#     print("da")
 
 selektovani_pacijent_pri_filtriranju = None
 
-SELEKTOVAN_INDEKS = -1   #kod izmene pacijenata i lekova
+SELEKTOVAN_INDEKS = -1   #pacijenati i lekovi
 SELEKTOVAN_PACIJENT = -1 #za ispis recepata
-SELEKTOVANI_INDEKS_LEKAR = -1 #kod izmene lekara
-SELEKTOVANI_RECEPT = -1  #kod zimene recepata
+SELEKTOVANI_INDEKS_LEKAR = -1
+SELEKTOVANI_RECEPT = -1
 
-class AppGui(Tk): #glavni prozor
+class AppGui(Tk):
 
     def komanda_prozor_lekovi(self):
         prozor_lekovi = ProzorLekovi(self)
@@ -39,11 +34,10 @@ class AppGui(Tk): #glavni prozor
         prozor_pacijenti = DodavanjeProzorpacijenti(self)
         self.wait_window(prozor_pacijenti)
 
-    def komanda_izlaz(self):  # ----ne treba da pravimo prozor niti ista slicno
+    def komanda_izlaz(self):
         odgovor = messagebox.askokcancel("Proizvodi", "Da li ste sigurni da želite da napustite aplikaciju?", icon="warning")
         if odgovor:
-            self.destroy()  # self pokazuje na tk klasu
-
+            self.destroy()
 
 
     def __init__(self):
@@ -56,8 +50,8 @@ class AppGui(Tk): #glavni prozor
         meni_bar = Menu(self)
 
         datoteka_meni = Menu(meni_bar, tearoff=0)  # -----tearof iskljucuje mogucnost da ga izvucemo sa strane
-        datoteka_meni.add_command(label="Izlaz", command=self.komanda_izlaz)  # -----u datoteka meni smo dodali komandu izlaz
-        meni_bar.add_cascade(label="Zatvori glavni prozor", menu=datoteka_meni)  # -----dodajemo ga u glavni meni pod nazivom datot
+        datoteka_meni.add_command(label="Izlaz", command=self.komanda_izlaz)
+        meni_bar.add_cascade(label="Zatvori glavni prozor", menu=datoteka_meni)
 
         self.__elementi_meni = Menu(meni_bar, tearoff=0)
         self.__elementi_meni.add_command(label='Pacijenti', command=self.komanda_prozor_pacijent)
@@ -116,8 +110,7 @@ class DodavanjeProzorpacijenti(Toplevel):
         Label(levi_frame, text="LISTA RECEPATA").grid(row=1, column=0, sticky=W)
 
         red = 0
-        Label(desni_frame, text="Pacijent:").grid(row=red,
-                                                  sticky=E)  # sticky argument određuje horinzotalno poravnanje kolone (E, W), odnosno vertikalno poravnanje reda (N, S)
+        Label(desni_frame, text="Pacijent:").grid(row=red,sticky=E)
         red += 1
         Label(desni_frame, text="Datum i vreme:").grid(row=red, sticky=E)
         red += 1
@@ -239,11 +232,11 @@ class DodavanjeProzorpacijenti(Toplevel):
         self.__lbo_labela['text'] = ''
 
     def popuni_pacijente_listbox(self):
-        self.__pacijenti_listbox.delete(0, END)  # obrisati sve unose iz Listbox-a
+        self.__pacijenti_listbox.delete(0, END)
 
         for i in self.__pacijenti:
             self.__pacijenti_listbox.insert(END, i.prezime + " " + i.ime)
-        self.ocisti_labele()  # Listbox će izgubiti prethodnu selekciju; ne želimo da labele prikazuju bilo šta ako ništa nije selektovano
+        self.ocisti_labele()
 
     def promena_selekcije_u_listboxu(self, event = None): #popuni labele
         if not self.__pacijenti_listbox.curselection():
@@ -279,7 +272,7 @@ class DodavanjeProzorpacijenti(Toplevel):
         self.__PretragaTxt.set("")
 
     def on_sacuvaj(self):
-        if self.__selektovani is None: #dodavanje novog pacijenta
+        if self.__selektovani is None:
             # jmbg = self.__jmbgTxt.get()
             jmbg = self.jmbg_validacija()
             if not jmbg:
@@ -315,11 +308,7 @@ class DodavanjeProzorpacijenti(Toplevel):
             self.ocisti_entry()
 
 
-        else: #izmena, pukne, nestane selekcija u listboxu
-            # indeks = self.promena_selekcije_u_listboxu()
-            #
-            # if indeks == -1:
-            #     return
+        else:
 
             p = self.__pacijenti[SELEKTOVAN_INDEKS] #izbacuje ove gresku ako ne bude ni jedan izabran<<<<<<<<<<
 
@@ -364,6 +353,7 @@ class DodavanjeProzorpacijenti(Toplevel):
             self.ocisti_entry()
 
     def on_izmeni(self):
+
         global SELEKTOVAN_INDEKS
         SELEKTOVAN_INDEKS = self.promena_selekcije_u_listboxu()
         self.ocisti_labele()
@@ -375,7 +365,10 @@ class DodavanjeProzorpacijenti(Toplevel):
         # if indeks == -1:
         #     return
 
+
+
         pacijent = self.__pacijenti[SELEKTOVAN_INDEKS]
+
 
         self.__jmbg_entry.configure(state="disabled")
         self.__lbo_entry.configure(state="disabled")
@@ -392,7 +385,7 @@ class DodavanjeProzorpacijenti(Toplevel):
         if messagebox.askquestion("upozorenje", "Da li zelite da obrisete pacijenta, i njegove recepte?", icon="warning") == "no":
             return
 
-        indeks = self.promena_selekcije_u_listboxu() #ne moze ovako sada mu indeks bude 1 i obrise prvog
+        indeks = self.promena_selekcije_u_listboxu()
         if indeks >= 0:
             izbrani_pacijent  = self.__pacijenti.pop(indeks)
             print(izbrani_pacijent)
@@ -425,8 +418,6 @@ class DodavanjeProzorpacijenti(Toplevel):
         # print(pacijent)
         self.popuni_labele(pacijent)
 
-
-
         # self.__izmeni_button['state'] = NORMAL
         # self.__ukloni_button['state'] = NORMAL
 
@@ -451,8 +442,6 @@ class DodavanjeProzorpacijenti(Toplevel):
 
         self.__pacijenti = rezultat_pretrage
         self.popuni_pacijente_listbox()
-
-
 
 
 
@@ -519,9 +508,6 @@ class DodavanjeProzorpacijenti(Toplevel):
         else:
             return lbo
 
-
-
-
     def komanda_izlaz(self):
         self.destroy()
 
@@ -550,7 +536,7 @@ class DodavanjeProzorpacijenti(Toplevel):
         Label(levi_frame, text="LISTA PACIJENATA").grid(sticky=W)
 
         red = 0
-        Label(desni_frame, text="JMBG:").grid(row=red, sticky=E)  # sticky argument određuje horinzotalno poravnanje kolone (E, W), odnosno vertikalno poravnanje reda (N, S)
+        Label(desni_frame, text="JMBG:").grid(row=red, sticky=E)
         red += 1
         Label(desni_frame, text="Ime:").grid(row=red, sticky=E)
         red += 1
@@ -634,7 +620,7 @@ class DodavanjeProzorpacijenti(Toplevel):
 
         dbkg = "#dfdfdf"  # siva boja za bekgraund
         self.__jmbg_entry = Entry(desni_frame, width=50, textvariable=self.__jmbgTxt, state='disabled',disabledbackground=dbkg)
-        self.__ime_entry = Entry(desni_frame, width=50, textvariable=self.__imeTxt, state='disabled',disabledbackground=dbkg)  # textvariable argument povezuje StringVar, IntVar i sl. objekte sa komponentom
+        self.__ime_entry = Entry(desni_frame, width=50, textvariable=self.__imeTxt, state='disabled',disabledbackground=dbkg)
         self.__prezime_entry = Entry(desni_frame, width=50, textvariable=self.__prezimeTxt, state='disabled',disabledbackground=dbkg)
         self.__datum_entry = Entry(desni_frame, width=50, textvariable=self.__datumTxt, state='disabled',disabledbackground=dbkg)
         self.__lbo_entry = Entry(desni_frame, width=50, textvariable=self.__lboTxt, state='disabled',disabledbackground=dbkg)
@@ -717,7 +703,7 @@ class DodavanjeProzorLekari(Toplevel):
         Label(levi_frame, text="LISTA RECEPATA").grid(row=1, column=0, sticky=W)
 
         red = 0
-        Label(desni_frame, text="Pacijent:").grid(row=red,sticky=E)  # sticky argument određuje horinzotalno poravnanje kolone (E, W), odnosno vertikalno poravnanje reda (N, S)
+        Label(desni_frame, text="Pacijent:").grid(row=red,sticky=E)
         red += 1
         Label(desni_frame, text="Datum i vreme:").grid(row=red, sticky=E)
         red += 1
@@ -778,7 +764,7 @@ class DodavanjeProzorLekari(Toplevel):
         self.__prikazi_recept_button['state'] = NORMAL
 
         indeks = self.__lekarirecepti_listbox.curselection()[0]
-        print(indeks)
+        #print(indeks)
         return indeks
 
     def ispisi_labele_recept(self, recept):
@@ -803,7 +789,7 @@ class DodavanjeProzorLekari(Toplevel):
 # ============>DODAVANJE LEKAR<============
 
     def on_dodaj(self):
-        self.__PretragaTxt.set("")
+
         self.popuni_lekare_listbox(self.__lekari)
 
         # dodaj_prozor = DodajProzorLekar(self)
@@ -895,19 +881,22 @@ class DodavanjeProzorLekari(Toplevel):
 #============>izmena LEKAR <============
 
     def on_izmeni(self):
-        self.__lekari = ucitaj_lekare()
-        self.popuni_lekare_listbox(self.__lekari)
-
         global SELEKTOVANI_INDEKS_LEKAR
         SELEKTOVANI_INDEKS_LEKAR = self.promena_selekcije_u_listboxu()
+
+        # self.__lekari = ucitaj_lekare()
+        # self.popuni_lekare_listbox(self.__lekari)
+        # self.__PretragaTxt.set("")
+
+
         self.ocisti_labele()
 
-        self.__PretragaTxt.set("")
+        # self.__PretragaTxt.set("")
         # izmeni_prozor = IzmenaProzorLekar(self)
         # self.wait_window(izmeni_prozor)
 
         # indeks = self.promena_selekcije_u_listboxu()
-        #lekar = self.__lekari[SELEKTOVANI_INDEKS_LEKAR]
+        lekar = self.__lekari[SELEKTOVANI_INDEKS_LEKAR]
 
         self.prozor_za_izmenu_lekara = Toplevel(self.master)
 
@@ -966,11 +955,13 @@ class DodavanjeProzorLekari(Toplevel):
 
         self.__jmbg_entry.configure(state="disabled")
         #indeks = self.promena_selekcije_u_listboxu()
+
         try:
             lekar = self.__lekari[SELEKTOVANI_INDEKS_LEKAR]
         except:
-            messagebox.showerror('greska','Nije mouca izmena prilikom pretrage, samo prikaz. Izaberite  u listi lekara kog zelite da izmenie')
+            messagebox.showerror('greska')
             return
+
         self.__jmbgTxt.set(lekar.jmbg)
         self.__imeTxt.set(lekar.ime)
         self.__datumTxt.set(lekar.datum_rodjenja)
@@ -1819,8 +1810,11 @@ class ProorRecepti(Toplevel):
         lek = self.__lekovi[self.__lekovi_combobox_dodaj.current()]
         izvestaj = self.__izvestajTxt.get()
         datum = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        kolicina = int(self.__kolicinaTxt.get())
-
+        try:
+            kolicina = int(self.__kolicinaTxt.get())
+        except:
+            messagebox.showerror('greska','morate uneti brokj koa vrednost za kolicinu')
+            return
         r = Recept(pacijent,datum,izvestaj,lekar,lek,kolicina)
 
         self.__recepti=ucitaj_recepte()
@@ -1948,7 +1942,7 @@ class ProorRecepti(Toplevel):
             if recept.pacijent.jmbg == obelezeni_u_komboboxu.jmbg:
                 recepti_za_odabranog.append(recept)
 
-        odabrani_recept = recepti_za_odabranog[ self.indeks]
+        odabrani_recept = recepti_za_odabranog[self.indeks]
 
         global SELEKTOVANI_RECEPT
         SELEKTOVANI_RECEPT = odabrani_recept
